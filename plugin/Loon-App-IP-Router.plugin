@@ -1,0 +1,27 @@
+#!name = Loon App IP Router
+#!desc = 观察指定 App 的 HTTP(S)/WebSocket Host，生成需人工确认的 Loon 分流规则候选；不自动修改配置。
+#!author = Loon App IP Router Contributors
+#!homepage = https://github.com/okgutta/loonout
+#!system = iOS,iPadOS,macOS
+#!system_version = 15
+#!loon_version = 3.5.1(983)
+#!tag = Loon,分流,诊断
+#!type = normal
+
+[Argument]
+enabled = switch,true,tag=分析开关,desc=关闭后 Request Script 不运行
+target = select,"ALL","BILIBILI","DOUYIN","NETEASE","WECHAT","WEIBO","XIAOHONGSHU","KUAISHOU","ZHIHU","TIEBA","COOLAPK","CUSTOM",tag=目标 App
+custom_target = input,"CUSTOM_APP",tag=自定义 App 名称,desc=target=CUSTOM 时使用
+policy = input,"IP",tag=代理策略组,desc=候选和导出规则使用的策略组，不会自动修改配置
+mode = select,"OBSERVE","ANALYZE",tag=分析模式,desc=OBSERVE 仅收集已识别 Host；ANALYZE 还记录本次目标会话中的未知 Host
+proxy_mode = select,"CORE_ONLY","CORE_MEDIA","WHOLE_APP","CUSTOM",tag=App Proxy Mode,desc=仅核心、核心加媒体、尽可能全部或自定义分类
+custom_categories = input,"API,AUTH,FEED,SEARCH,COMMENT,USER",tag=自定义分类,desc=proxy_mode=CUSTOM 时以逗号分隔
+control = select,"START","PAUSE","STOP","CLEAR",tag=生命周期操作,desc=选择后运行“控制分析生命周期”；CLEAR 仅清除此工具的数据
+confirmed_rules = input,"",tag=已确认规则,desc=从报告复制规则 ID，以分号分隔；只有这些规则会导出
+existing_rules = input,"",tag=已有规则,desc=可粘贴 DOMAIN 类已有规则，以分号分隔；用于重复和策略遮蔽检查
+
+[Script]
+request if ${url} ~= /^(?:https?|wss?):\/\//i then script("https://raw.githubusercontent.com/okgutta/loonout/main/analyzer.js", {${enabled}, ${target}, ${custom_target}, ${policy}, ${mode}, ${proxy_mode}, ${custom_categories}}) with enable=${enabled}, tag="App 请求观察器", timeout=20
+generic then script("https://raw.githubusercontent.com/okgutta/loonout/main/control.js", {${enabled}, ${target}, ${custom_target}, ${policy}, ${mode}, ${proxy_mode}, ${custom_categories}, ${control}}) with tag="控制分析生命周期", img_url="record.circle.system", timeout=30
+generic then script("https://raw.githubusercontent.com/okgutta/loonout/main/report.js", {${policy}, ${proxy_mode}, ${custom_categories}, ${existing_rules}}) with tag="生成分析报告", img_url="doc.text.magnifyingglass.system", timeout=60
+generic then script("https://raw.githubusercontent.com/okgutta/loonout/main/export.js", {${policy}, ${proxy_mode}, ${custom_categories}, ${confirmed_rules}, ${existing_rules}}) with tag="导出已确认规则", img_url="square.and.arrow.up.system", timeout=60

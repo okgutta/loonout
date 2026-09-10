@@ -1,0 +1,24 @@
+{
+  "DOUYIN": [
+    { "url": "https://abc-core-c-lq.example.com/api/feed", "count": 45 },
+    { "url": "https://foo-core-c-lq.example.com/api/feed", "count": 52 },
+    { "url": "https://abc-normal-lq.example.com/api/comment", "count": 31 },
+    { "url": "https://foo-normal-lq.example.com/api/comment", "count": 29 },
+    { "url": "https://abc-search-lq.example.com/search", "count": 18 },
+    { "url": "https://foo-search-lq.example.com/search", "count": 17 },
+    { "url": "https://v1.douyinvod.com/video/part.mp4", "count": 120 },
+    { "url": "https://unknown-session.example.org/opaque", "count": 7 }
+  ],
+  "BILIBILI": [
+    { "url": "https://api.bilibili.com/x/web-interface/view", "count": 35 },
+    { "url": "https://app.bilibili.com/x/feed/index", "count": 26 },
+    { "url": "https://foo.biliapi.net/x/api", "count": 18 },
+    { "url": "https://bar.biliapi.net/x/api", "count": 12 },
+    { "url": "https://upos.bilivideo.com/video/part.mp4", "count": 160 }
+  ],
+  "NETEASE": [
+    { "url": "https://music.163.com/api/song/detail", "count": 42 },
+    { "url": "https://music.126.net/audio/song.mp3", "count": 90 },
+    { "url": "wss://push.netease.im/socket", "count": 21 }
+  ]
+}
