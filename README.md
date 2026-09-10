@@ -20,6 +20,10 @@
 
 ### Loon 在线安装（推荐）
 
+[点击这里一键导入 Loon](https://www.nsloon.com/openloon/import?plugin=https%3A%2F%2Fraw.githubusercontent.com%2Fokgutta%2Floonout%2Fmain%2FLoon-App-IP-Router.plugin)
+
+该 HTTPS 通用链接会按 Loon 官方 URL Scheme 打开插件导入页面。
+
 在 Loon 的插件页面添加下面这个订阅地址即可，脚本会自动从同一仓库加载：
 
 ```text
