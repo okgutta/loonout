@@ -21,7 +21,7 @@ confirmed_rules = input,"",tag=已确认规则,desc=从报告复制规则 ID，�
 existing_rules = input,"",tag=已有规则,desc=可粘贴 DOMAIN 类已有规则，以分号分隔；用于重复和策略遮蔽检查
 
 [Script]
-http-request ^(?:https?|wss?):\/\/ script-path=https://raw.githubusercontent.com/okgutta/loonout/main/analyzer.js,tag=App 请求观察器,timeout=20,argument=[{enabled},{target},{custom_target},{policy},{mode},{proxy_mode},{custom_categories}],enable={enabled}
-generic script-path=https://raw.githubusercontent.com/okgutta/loonout/main/control.js,tag=控制分析生命周期,img-url=record.circle.system,timeout=30,argument=[{enabled},{target},{custom_target},{policy},{mode},{proxy_mode},{custom_categories},{control}]
-generic script-path=https://raw.githubusercontent.com/okgutta/loonout/main/report.js,tag=生成分析报告,img-url=doc.text.magnifyingglass.system,timeout=60,argument=[{policy},{proxy_mode},{custom_categories},{existing_rules}]
-generic script-path=https://raw.githubusercontent.com/okgutta/loonout/main/export.js,tag=导出已确认规则,img-url=square.and.arrow.up.system,timeout=60,argument=[{policy},{proxy_mode},{custom_categories},{confirmed_rules},{existing_rules}]
+http-request ^(?:https?|wss?):\/\/ script-path=https://raw.githubusercontent.com/okgutta/loonout/v1.0.1/analyzer.js,tag=App 请求观察器,timeout=20,argument=[{enabled},{target},{custom_target},{policy},{mode},{proxy_mode},{custom_categories}],enable={enabled}
+generic script-path=https://raw.githubusercontent.com/okgutta/loonout/v1.0.1/control.js,tag=控制分析生命周期,img-url=record.circle.system,timeout=30,argument=[{enabled},{target},{custom_target},{policy},{mode},{proxy_mode},{custom_categories},{control}]
+generic script-path=https://raw.githubusercontent.com/okgutta/loonout/v1.0.1/report.js,tag=生成分析报告,img-url=doc.text.magnifyingglass.system,timeout=60,argument=[{policy},{proxy_mode},{custom_categories},{existing_rules}]
+generic script-path=https://raw.githubusercontent.com/okgutta/loonout/v1.0.1/export.js,tag=导出已确认规则,img-url=square.and.arrow.up.system,timeout=60,argument=[{policy},{proxy_mode},{custom_categories},{confirmed_rules},{existing_rules}]
