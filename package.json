@@ -1,6 +1,6 @@
 {
   "name": "loon-app-ip-router",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "private": true,
   "description": "Loon App traffic observer and human-confirmed routing rule generator",
   "license": "MIT",

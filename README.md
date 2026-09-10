@@ -44,7 +44,7 @@ report.js
 export.js
 ```
 
-`plugin/` 目录也包含同一套完整产物。线上 manifest 使用固定 GitHub Raw URL；Loon 官方 Script v2 文档确认脚本路径可以是本地文件、相对路径或远程 URL。
+`plugin/` 目录也包含同一套完整产物。线上 manifest 使用固定 GitHub Raw URL；Loon 官方旧版 Script 文档确认通过 `script-path` 加载脚本。
 
 本地开发时运行：
 
@@ -54,7 +54,7 @@ npm run build
 
 本地自托管时可把上述五个文件放到同一 HTTPS 目录，并把 manifest 中四个脚本 URL 换成自己的地址。官方仓库版本已经配置为从 `okgutta/loonout` 自动加载。
 
-最低版本声明为 Loon `3.5.1 (983)`，因为项目使用该版本起的新 Script v2 语法。
+最低版本声明为 Loon `3.5.0`。可安装插件使用官方旧版 `http-request` / `generic` Script 语法；官方文档说明该语法适用于 Loon 3.5.1 (982) 及之前版本，因此不依赖 3.5.1 (983) 才加入的 Script v2。
 
 ## 使用流程
 
@@ -162,7 +162,8 @@ docs/               官方 API 核对记录
 ## 官方 API 依据
 
 - <https://nsloon.app/docs/Plugin/>
-- <https://nsloon.app/en/docs/Script/script_v2/>
+- <https://nsloon.app/docs/Script/>
+- <https://nsloon.app/en/docs/Script/script_v2/>（仅用于确认 3.5.1 (983) 新语法边界；安装产物未使用）
 - <https://nsloon.app/docs/Script/script_api/>
 
 详细核对记录见 [`docs/LOON_API_NOTES.md`](./docs/LOON_API_NOTES.md)。

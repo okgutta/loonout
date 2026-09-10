@@ -4,7 +4,7 @@
 #!homepage = https://github.com/okgutta/loonout
 #!system = iOS,iPadOS,macOS
 #!system_version = 15
-#!loon_version = 3.5.1(983)
+#!loon_version = 3.5.0
 #!tag = Loon,分流,诊断
 #!type = normal
 
@@ -21,7 +21,7 @@ confirmed_rules = input,"",tag=已确认规则,desc=从报告复制规则 ID，�
 existing_rules = input,"",tag=已有规则,desc=可粘贴 DOMAIN 类已有规则，以分号分隔；用于重复和策略遮蔽检查
 
 [Script]
-request if ${url} ~= /^(?:https?|wss?):\/\//i then script("https://raw.githubusercontent.com/okgutta/loonout/main/analyzer.js", {${enabled}, ${target}, ${custom_target}, ${policy}, ${mode}, ${proxy_mode}, ${custom_categories}}) with enable=${enabled}, tag="App 请求观察器", timeout=20
-generic then script("https://raw.githubusercontent.com/okgutta/loonout/main/control.js", {${enabled}, ${target}, ${custom_target}, ${policy}, ${mode}, ${proxy_mode}, ${custom_categories}, ${control}}) with tag="控制分析生命周期", img_url="record.circle.system", timeout=30
-generic then script("https://raw.githubusercontent.com/okgutta/loonout/main/report.js", {${policy}, ${proxy_mode}, ${custom_categories}, ${existing_rules}}) with tag="生成分析报告", img_url="doc.text.magnifyingglass.system", timeout=60
-generic then script("https://raw.githubusercontent.com/okgutta/loonout/main/export.js", {${policy}, ${proxy_mode}, ${custom_categories}, ${confirmed_rules}, ${existing_rules}}) with tag="导出已确认规则", img_url="square.and.arrow.up.system", timeout=60
+http-request ^(?:https?|wss?):\/\/ script-path=https://raw.githubusercontent.com/okgutta/loonout/main/analyzer.js,tag=App 请求观察器,timeout=20,argument=[{enabled},{target},{custom_target},{policy},{mode},{proxy_mode},{custom_categories}],enable={enabled}
+generic script-path=https://raw.githubusercontent.com/okgutta/loonout/main/control.js,tag=控制分析生命周期,img-url=record.circle.system,timeout=30,argument=[{enabled},{target},{custom_target},{policy},{mode},{proxy_mode},{custom_categories},{control}]
+generic script-path=https://raw.githubusercontent.com/okgutta/loonout/main/report.js,tag=生成分析报告,img-url=doc.text.magnifyingglass.system,timeout=60,argument=[{policy},{proxy_mode},{custom_categories},{existing_rules}]
+generic script-path=https://raw.githubusercontent.com/okgutta/loonout/main/export.js,tag=导出已确认规则,img-url=square.and.arrow.up.system,timeout=60,argument=[{policy},{proxy_mode},{custom_categories},{confirmed_rules},{existing_rules}]
