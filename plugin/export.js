@@ -7,6 +7,7 @@ var modules = {
 
 const { createStorage, normalizeConfig } = require("src/storage.js");
 const { recommendRules, exportConfirmed } = require("src/rules.js");
+const { recordsForConfig } = require("src/report.js");
 
 const adapter = {
   read: (key) => $persistentStore.read(key),
@@ -16,7 +17,7 @@ const adapter = {
 try {
   const state = createStorage(adapter).load();
   state.config = normalizeConfig($argument || {}, state.config);
-  const records = Object.values(state.hosts || {});
+  const records = recordsForConfig(state);
   const rules = recommendRules(records, {
     policy: state.config.policy,
     proxyMode: state.config.proxyMode,
@@ -26,6 +27,7 @@ try {
   const exported = exportConfirmed(rules, ($argument || {}).confirmed_rules || '', {
     existingRules: ($argument || {}).existing_rules || ''
   });
+  console.log(exported.text);
   $done({ title: '已确认的 Loon Rule', content: exported.text });
 } catch (error) {
   $done({ title: 'Loon App IP Router', content: '导出失败：' + String(error && error.message || error) });
@@ -733,6 +735,151 @@ function weightedAverage(items, valueKey, weightKey) {
 }
 
 module.exports = { clamp, confidenceToStars, weightedAverage };
+
+},
+"src/report.js": function(module, exports, require) {
+'use strict';
+
+const { calculateCoverage } = require("src/coverage.js");
+const { buildDiagnostics } = require("src/diagnostics.js");
+const { confidenceToStars } = require("src/scoring.js");
+
+function durationMinutes(state) {
+  if (!state.session || !state.session.startedAt) return 0;
+  const end = state.session.stoppedAt || state.updatedAt || new Date().toISOString();
+  return Math.max(0, Math.round((Date.parse(end) - Date.parse(state.session.startedAt)) / 60000));
+}
+
+function recordsForConfig(state) {
+  const records = Object.values(state.hosts || {});
+  const config = state.config || {};
+  if (!config.target || config.target === 'ALL') return records;
+  const app = config.target === 'CUSTOM' ? (config.customTarget || 'CUSTOM') : config.target;
+  return records.filter((record) => record.app === app);
+}
+
+function generateReport(state, rules) {
+  const records = recordsForConfig(state);
+  const recommended = rules.filter((rule) => rule.recommended);
+  const coverage = calculateCoverage(records, recommended);
+  const diagnostics = buildDiagnostics(records);
+  const counts = {};
+  for (const record of records) counts[record.category] = (counts[record.category] || 0) + 1;
+  const lines = [
+    '━━━━━━━━━━━━━━━━━━',
+    'Loon Rule Analyzer',
+    '━━━━━━━━━━━━━━━━━━',
+    '',
+    '目标：' + (state.config.target === 'CUSTOM' ? (state.config.customTarget || 'CUSTOM') : state.config.target),
+    '状态：' + state.lifecycle,
+    '分析时间：' + durationMinutes(state) + ' 分钟',
+    '请求：' + coverage.totalRequests,
+    'Host：' + records.length,
+    '核心业务 Host：' + records.filter((r) => ['API', 'AUTH', 'WEB', 'FEED', 'SEARCH', 'COMMENT', 'USER', 'WEBSOCKET'].includes(r.category)).length,
+    '媒体 Host：' + records.filter((r) => ['STATIC', 'IMAGE', 'VIDEO', 'CDN', 'DOWNLOAD'].includes(r.category)).length,
+    '未知 Host：' + diagnostics.unknown.length,
+    '',
+    '已识别请求：' + coverage.identifiedPercent + '%',
+    '未知请求：' + coverage.unknownPercent + '%',
+    '推荐规则覆盖率：' + coverage.ruleCoveragePercent + '%',
+    '核心业务覆盖率：' + coverage.core.percent + '%',
+    '媒体覆盖率：' + coverage.media.percent + '%',
+    '',
+    '━━━━━━━━━━━━━━━━━━',
+    '规则候选（复制 ID 到“已确认规则”参数后才能导出）',
+    '━━━━━━━━━━━━━━━━━━'
+  ];
+  for (const rule of rules.slice(0, 80)) {
+    const rating = confidenceToStars(rule.confidence);
+    lines.push(
+      '', rating.glyphs + ' ' + rating.percent + '% ' + rating.label,
+      rule.type + ',' + rule.value + ',' + rule.policy,
+      'ID：' + rule.id,
+      'App：' + rule.app + '；分类：' + rule.category + '；Host：' + rule.hostCount + '；请求：' + rule.requestCount,
+      '原因：' + rule.reason +
+        (rule.coveredBy ? '；已被候选 ' + rule.coveredBy + ' 覆盖' : '') +
+        (rule.existingStatus === 'ALREADY_COVERED' ? '；已有同策略规则覆盖：' + rule.existingRule : '') +
+        (rule.existingStatus === 'POLICY_SHADOW' ? '；⚠ 可能被不同策略的已有规则遮蔽：' + rule.existingRule : '')
+    );
+  }
+  lines.push('', '━━━━━━━━━━━━━━━━━━', '⚠ 未识别 Host', '━━━━━━━━━━━━━━━━━━');
+  for (const record of diagnostics.unknown.slice(0, 100)) {
+    lines.push(record.host + ' | 请求 ' + record.count + ' | 首次 ' + record.firstSeen + ' | 最近 ' + record.lastSeen + ' | 建议继续观察');
+  }
+  if (!diagnostics.unknown.length) lines.push('无');
+  lines.push('', '━━━━━━━━━━━━━━━━━━', '诊断提示', '━━━━━━━━━━━━━━━━━━', ...diagnostics.warnings.map((warning) => '⚠ ' + warning));
+  return { text: lines.join('\n'), coverage, diagnostics, categoryCounts: counts };
+}
+
+module.exports = { generateReport, durationMinutes, recordsForConfig };
+
+},
+"src/coverage.js": function(module, exports, require) {
+'use strict';
+
+const { CORE_CATEGORIES, MEDIA_CATEGORIES } = require("src/constants.js");
+const { matchRule } = require("src/rules.js");
+
+function percent(part, total) {
+  return total ? Math.round(part / total * 1000) / 10 : 0;
+}
+
+function groupCoverage(records, rules, predicate) {
+  const group = records.filter(predicate);
+  const requests = group.reduce((sum, record) => sum + (record.count || 0), 0);
+  const covered = group.reduce((sum, record) => {
+    return sum + (rules.some((rule) => matchRule(record.host, rule)) ? (record.count || 0) : 0);
+  }, 0);
+  return { requests, coveredRequests: covered, percent: percent(covered, requests) };
+}
+
+function calculateCoverage(records, rules) {
+  const activeRules = (rules || []).filter((rule) => rule.recommended !== false);
+  const total = records.reduce((sum, record) => sum + (record.count || 0), 0);
+  const recognizedKinds = ['FINGERPRINT', 'CUSTOM_SESSION'];
+  const identified = records.reduce((sum, record) => sum + (recognizedKinds.includes(record.recognition) ? (record.count || 0) : 0), 0);
+  const unknownRecords = records.filter((record) => !recognizedKinds.includes(record.recognition) || record.category === 'UNKNOWN');
+  const unknown = unknownRecords.reduce((sum, record) => sum + (record.count || 0), 0);
+  const all = groupCoverage(records, activeRules, () => true);
+  return {
+    totalRequests: total,
+    identifiedRequests: identified,
+    identifiedPercent: percent(identified, total),
+    unknownRequests: unknown,
+    unknownPercent: percent(unknown, total),
+    ruleCoveragePercent: all.percent,
+    coveredRequests: all.coveredRequests,
+    core: groupCoverage(records, activeRules, (record) => CORE_CATEGORIES.includes(record.category)),
+    media: groupCoverage(records, activeRules, (record) => MEDIA_CATEGORIES.includes(record.category)),
+    unknown: groupCoverage(records, activeRules, (record) => !recognizedKinds.includes(record.recognition) || record.category === 'UNKNOWN')
+  };
+}
+
+module.exports = { calculateCoverage, percent, groupCoverage };
+
+},
+"src/diagnostics.js": function(module, exports, require) {
+'use strict';
+
+function buildDiagnostics(records) {
+  const ipv4 = records.filter((record) => record.isIP && record.ipVersion === 4);
+  const ipv6 = records.filter((record) => record.isIP && record.ipVersion === 6);
+  const websocket = records.filter((record) => record.category === 'WEBSOCKET');
+  const likelyQuic = records.filter((record) => record.likelyQuic);
+  const unknown = records.filter((record) => !['FINGERPRINT', 'CUSTOM_SESSION'].includes(record.recognition) || record.category === 'UNKNOWN')
+    .sort((a, b) => b.count - a.count);
+  const warnings = [
+    'Request Script 每个请求只会命中最终配置顺序中的首个完整匹配项；更早的脚本可能造成漏采。',
+    'HTTP Request Script 不能证明已观察原始 QUIC/UDP；DOMAIN 规则也不等于自动覆盖所有 UDP。'
+  ];
+  if (ipv4.length) warnings.push('检测到直连 IPv4 字面量 Host；域名规则无法匹配这些目标。');
+  if (ipv6.length) warnings.push('检测到 IPv6 字面量 Host，请检查 IPv6 是否绕过代理。');
+  else warnings.push('未观察到 IPv6 字面量不代表没有 IPv6 泄漏，请进行双栈出口验证。');
+  if (likelyQuic.length) warnings.push('发现疑似 QUIC/HTTP3 Host 标记，需额外核验 UDP 路由。');
+  return { ipv4, ipv6, websocket, likelyQuic, unknown, warnings };
+}
+
+module.exports = { buildDiagnostics };
 
 }
 };

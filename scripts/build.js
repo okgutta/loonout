@@ -6,7 +6,7 @@ const path = require('node:path');
 const root = path.resolve(__dirname, '..');
 const entryDir = path.join(root, 'plugin', 'entries');
 const outDir = path.join(root, 'plugin');
-const entries = ['analyzer', 'control', 'report', 'export'];
+const entries = ['analyzer', 'control', 'report', 'export', 'easy-analyzer', 'easy-report'];
 
 function moduleId(filename) {
   return path.relative(root, filename).replace(/\\/g, '/');
@@ -65,4 +65,5 @@ for (const entry of entries) {
   fs.writeFileSync(path.join(root, entry + '.js'), output, 'utf8');
 }
 fs.copyFileSync(path.join(outDir, 'Loon-App-IP-Router.plugin'), path.join(root, 'Loon-App-IP-Router.plugin'));
+fs.copyFileSync(path.join(outDir, 'Loon-App-IP-Router-Easy.plugin'), path.join(root, 'Loon-App-IP-Router-Easy.plugin'));
 console.log('Built ' + entries.length + ' Loon scripts in plugin/ and repository root, plus root plugin manifest.');

@@ -2,12 +2,12 @@
 (function () {
 'use strict';
 var modules = {
-"plugin/entries/export.js": function(module, exports, require) {
+"plugin/entries/easy-report.js": function(module, exports, require) {
 'use strict';
 
 const { createStorage, normalizeConfig } = require("src/storage.js");
-const { recommendRules, exportConfirmed } = require("src/rules.js");
-const { recordsForConfig } = require("src/report.js");
+const { recommendRules } = require("src/rules.js");
+const { generateReport, recordsForConfig } = require("src/report.js");
 
 const adapter = {
   read: (key) => $persistentStore.read(key),
@@ -16,21 +16,25 @@ const adapter = {
 
 try {
   const state = createStorage(adapter).load();
-  state.config = normalizeConfig($argument || {}, state.config);
+  state.config = normalizeConfig(Object.assign({}, $argument || {}, { mode: 'ANALYZE' }), state.config);
   const records = recordsForConfig(state);
   const rules = recommendRules(records, {
     policy: state.config.policy,
     proxyMode: state.config.proxyMode,
-    customCategories: state.config.customCategories,
-    existingRules: ($argument || {}).existing_rules || ''
+    customCategories: state.config.customCategories
   });
-  const exported = exportConfirmed(rules, ($argument || {}).confirmed_rules || '', {
-    existingRules: ($argument || {}).existing_rules || ''
-  });
-  console.log(exported.text);
-  $done({ title: '已确认的 Loon Rule', content: exported.text });
+  const report = generateReport(state, rules);
+  const target = state.config.target === 'CUSTOM' ? (state.config.customTarget || 'CUSTOM') : state.config.target;
+  const summary = '目标：' + target + '\n请求：' + report.coverage.totalRequests + '\nHost：' + records.length + '\n候选规则：' + rules.filter((rule) => rule.recommended).length;
+  console.log(report.text);
+  if (typeof $notification !== 'undefined' && $notification && typeof $notification.post === 'function') {
+    $notification.post('Loon App IP Router', '抓取结果已生成', summary, { clipboard: report.text });
+  }
+  $done({ title: 'Loon App IP Router 简易报告', content: report.text });
 } catch (error) {
-  $done({ title: 'Loon App IP Router', content: '导出失败：' + String(error && error.message || error) });
+  const message = '报告生成失败：' + String(error && error.message || error);
+  console.log('[Loon App IP Router Easy] ' + message);
+  $done({ title: 'Loon App IP Router', content: message });
 }
 
 },
@@ -891,5 +895,5 @@ function require(id) {
   modules[id](module, module.exports, require);
   return module.exports;
 }
-require("plugin/entries/export.js");
+require("plugin/entries/easy-report.js");
 }());

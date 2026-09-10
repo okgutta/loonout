@@ -18,16 +18,23 @@
 
 ## 交付文件与安装
 
-### Loon 在线安装（推荐）
+### 简易版一键安装（推荐）
 
-[点击这里一键导入 Loon 3.5.0 兼容版](https://www.nsloon.com/openloon/import?plugin=https%3A%2F%2Fraw.githubusercontent.com%2Fokgutta%2Floonout%2Fv1.0.1%2FLoon-App-IP-Router.plugin)
+[点击这里一键导入简易版](https://www.nsloon.com/openloon/import?plugin=https%3A%2F%2Fraw.githubusercontent.com%2Fokgutta%2Floonout%2Fv1.1.0%2FLoon-App-IP-Router-Easy.plugin)
 
 该 HTTPS 通用链接会按 Loon 官方 URL Scheme 打开插件导入页面。
+
+简易版只有五个参数。选择目标 App 和策略组后直接使用 App，最后运行一次“查看抓取结果”，不需要 START、STOP 或填写已确认规则。如果安装过高级版，请先删除或停用高级版，避免两个 Request Script 互相抢占。
+
+### 高级版
+
+[点击这里导入高级版](https://www.nsloon.com/openloon/import?plugin=https%3A%2F%2Fraw.githubusercontent.com%2Fokgutta%2Floonout%2Fv1.0.1%2FLoon-App-IP-Router.plugin)
 
 在 Loon 的插件页面添加下面这个订阅地址即可，脚本会自动从同一仓库加载：
 
 ```text
-https://raw.githubusercontent.com/okgutta/loonout/v1.0.1/Loon-App-IP-Router.plugin
+简易版：https://raw.githubusercontent.com/okgutta/loonout/v1.1.0/Loon-App-IP-Router-Easy.plugin
+高级版：https://raw.githubusercontent.com/okgutta/loonout/v1.0.1/Loon-App-IP-Router.plugin
 ```
 
 仓库主页：<https://github.com/okgutta/loonout>

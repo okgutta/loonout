@@ -10,8 +10,16 @@ function durationMinutes(state) {
   return Math.max(0, Math.round((Date.parse(end) - Date.parse(state.session.startedAt)) / 60000));
 }
 
-function generateReport(state, rules) {
+function recordsForConfig(state) {
   const records = Object.values(state.hosts || {});
+  const config = state.config || {};
+  if (!config.target || config.target === 'ALL') return records;
+  const app = config.target === 'CUSTOM' ? (config.customTarget || 'CUSTOM') : config.target;
+  return records.filter((record) => record.app === app);
+}
+
+function generateReport(state, rules) {
+  const records = recordsForConfig(state);
   const recommended = rules.filter((rule) => rule.recommended);
   const coverage = calculateCoverage(records, recommended);
   const diagnostics = buildDiagnostics(records);
@@ -63,4 +71,4 @@ function generateReport(state, rules) {
   return { text: lines.join('\n'), coverage, diagnostics, categoryCounts: counts };
 }
 
-module.exports = { generateReport, durationMinutes };
+module.exports = { generateReport, durationMinutes, recordsForConfig };

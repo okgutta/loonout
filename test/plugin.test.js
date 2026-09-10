@@ -43,3 +43,28 @@ test('built Loon bundles execute with documented globals', () => {
   const state = JSON.parse(Array.from(data.values())[0]);
   assert.equal(state.totalRequests, 1);
 });
+
+test('easy plugin auto-starts collection without lifecycle action', () => {
+  const manifest = fs.readFileSync(path.join(root, 'plugin', 'Loon-App-IP-Router-Easy.plugin'), 'utf8');
+  assert.match(manifest, /#!loon_version = 3\.5\.0/);
+  assert.match(manifest, /^http-request .*easy-analyzer\.js/m);
+  assert.match(manifest, /^generic .*easy-report\.js/m);
+  assert.doesNotMatch(manifest, /control|confirmed_rules|existing_rules/);
+
+  const data = new Map();
+  const persistent = {
+    read: (key) => data.get(key),
+    write: (value, key) => { if (value == null) data.delete(key); else data.set(key, value); return true; }
+  };
+  vm.runInNewContext(fs.readFileSync(path.join(root, 'plugin', 'easy-analyzer.js'), 'utf8'), {
+    console,
+    $persistentStore: persistent,
+    $argument: { enabled: true, target: 'DOUYIN', policy: 'IP', proxy_mode: 'CORE_MEDIA' },
+    $request: { url: 'https://abc-core-c-lq.example.com/api/feed', method: 'GET' },
+    $done: () => {}
+  });
+  const state = JSON.parse(Array.from(data.values())[0]);
+  assert.equal(state.lifecycle, 'RUNNING');
+  assert.equal(state.totalRequests, 1);
+  assert.equal(state.config.target, 'DOUYIN');
+});

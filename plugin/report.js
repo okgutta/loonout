@@ -7,7 +7,7 @@ var modules = {
 
 const { createStorage, normalizeConfig } = require("src/storage.js");
 const { recommendRules } = require("src/rules.js");
-const { generateReport } = require("src/report.js");
+const { generateReport, recordsForConfig } = require("src/report.js");
 
 const adapter = {
   read: (key) => $persistentStore.read(key),
@@ -17,7 +17,7 @@ const adapter = {
 try {
   const state = createStorage(adapter).load();
   state.config = normalizeConfig($argument || {}, state.config);
-  const records = Object.values(state.hosts || {});
+  const records = recordsForConfig(state);
   const rules = recommendRules(records, {
     policy: state.config.policy,
     proxyMode: state.config.proxyMode,
@@ -25,6 +25,7 @@ try {
     existingRules: ($argument || {}).existing_rules || ''
   });
   const report = generateReport(state, rules);
+  console.log(report.text);
   $done({ title: 'Loon App IP Router 报告', content: report.text });
 } catch (error) {
   $done({ title: 'Loon App IP Router', content: '报告生成失败：' + String(error && error.message || error) });
@@ -747,8 +748,16 @@ function durationMinutes(state) {
   return Math.max(0, Math.round((Date.parse(end) - Date.parse(state.session.startedAt)) / 60000));
 }
 
-function generateReport(state, rules) {
+function recordsForConfig(state) {
   const records = Object.values(state.hosts || {});
+  const config = state.config || {};
+  if (!config.target || config.target === 'ALL') return records;
+  const app = config.target === 'CUSTOM' ? (config.customTarget || 'CUSTOM') : config.target;
+  return records.filter((record) => record.app === app);
+}
+
+function generateReport(state, rules) {
+  const records = recordsForConfig(state);
   const recommended = rules.filter((rule) => rule.recommended);
   const coverage = calculateCoverage(records, recommended);
   const diagnostics = buildDiagnostics(records);
@@ -800,7 +809,7 @@ function generateReport(state, rules) {
   return { text: lines.join('\n'), coverage, diagnostics, categoryCounts: counts };
 }
 
-module.exports = { generateReport, durationMinutes };
+module.exports = { generateReport, durationMinutes, recordsForConfig };
 
 },
 "src/coverage.js": function(module, exports, require) {

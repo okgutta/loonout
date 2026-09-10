@@ -17,6 +17,7 @@ try {
   const args = $argument || {};
   const state = storage.control(args.control || 'START', args);
   const target = state.config.target === 'CUSTOM' ? (state.config.customTarget || 'CUSTOM') : state.config.target;
+  console.log('[Loon App IP Router] 操作=' + String(args.control || 'START').toUpperCase() + ' 状态=' + state.lifecycle + ' 目标=' + target);
   $done({
     title: 'Loon App IP Router',
     content: '操作：' + String(args.control || 'START').toUpperCase() + '\n状态：' + state.lifecycle + '\n目标：' + target + '\nHost：' + Object.keys(state.hosts || {}).length
