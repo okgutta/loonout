@@ -51,8 +51,11 @@ $BaseUrls = @(
     "https://ghproxy.net/$UpstreamList"
 )
 
+# 受管区块的起止标记。区块之外的内容脚本一律不碰，可以放心在后面写手工规则。
 $BlockStartMarker = '# ==== IP 归属地伪装'
-$BlockEndAnchor   = '# 未被域名规则识别的中国大陆 IP 直连，其余交给兜底策略。'
+$BlockEndMarker   = '# ==== IP 归属地伪装 结束（以上由 scripts/sync-anti-ip-rules.ps1 生成）===='
+# 旧版配置里没有结束标记，首次迁移时退回用这一行定位区块尾部。
+$LegacyEndAnchor  = '# 未被域名规则识别的中国大陆 IP 直连，其余交给兜底策略。'
 
 # Loon 支持的规则类型。上游若新增了别的类型，宁可中止也不要写进配置。
 $SupportedTypes = @(
@@ -114,20 +117,29 @@ $block.Add('# 本段由 scripts/sync-anti-ip-rules.ps1 生成，请勿手工编�
 $block.Add('')
 foreach ($rule in $rules) { $block.Add($rule) }
 $block.Add('')
+$block.Add($BlockEndMarker)
 
 $resolved = (Resolve-Path -LiteralPath $ConfigPath).Path
 $lines = ([System.IO.File]::ReadAllText($resolved, [System.Text.Encoding]::UTF8)) -split "`n"
 
-$anchorIndex = [Array]::IndexOf($lines, $BlockEndAnchor)
-if ($anchorIndex -lt 0) { throw "在 $resolved 中找不到锚点行：$BlockEndAnchor" }
-
 $startIndex = -1
-for ($i = 0; $i -lt $anchorIndex; $i++) {
+for ($i = 0; $i -lt $lines.Count; $i++) {
     if ($lines[$i].StartsWith($BlockStartMarker)) { $startIndex = $i; break }
 }
 
-$before = if ($startIndex -ge 0) { $lines[0..($startIndex - 1)] } else { $lines[0..($anchorIndex - 1)] }
-$after  = $lines[$anchorIndex..($lines.Count - 1)]
+$endIndex = -1
+if ($startIndex -ge 0) {
+    for ($i = $startIndex + 1; $i -lt $lines.Count; $i++) {
+        if ($lines[$i].StartsWith($BlockEndMarker)) { $endIndex = $i; break }
+    }
+}
+if ($endIndex -lt 0) {
+    $endIndex = [Array]::IndexOf($lines, $LegacyEndAnchor) - 1
+}
+if ($endIndex -lt 0) { throw "在 $resolved 中找不到区块结束位置（既没有结束标记，也没有旧锚点行）。" }
+
+$before = if ($startIndex -ge 0) { $lines[0..($startIndex - 1)] } else { $lines[0..$endIndex] }
+$after  = $lines[($endIndex + 1)..($lines.Count - 1)]
 
 $new = [System.Collections.Generic.List[string]]::new()
 $new.AddRange([string[]]$before)
