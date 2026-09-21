@@ -52,5 +52,20 @@ DOMAIN-SUFFIX,static1.dongdianqiu.com,DIRECT
 DOMAIN-KEYWORD,bdimg,DIRECT
 DOMAIN-SUFFIX,dongdianqiu.com,IP归属地
 
-# --- 小红书 / 网易云音乐 ---
-# 这两次抓包里没有它们的流量。等哪天抓到了再加。
+# --- 网易云音乐 --- 发现于 2026-09-21
+# 主 API interface3.music.163.com（1121 条抓包里占 342 条）已被上游
+# DOMAIN-SUFFIX,music.163.com 覆盖，下面几条是抓包里发现的漏网域名。
+#
+# HTTPDNS：跟上游对 B站 httpdns.bilivideo.com 的处理保持一致 —— 阻断而不是代理，
+# 逼 App 回落系统 DNS，让域名规则生效。如果网易云变慢或异常，删掉这条。
+DOMAIN,httpdns.n.netease.com,REJECT
+# 业务接口（LOOK 直播 / 心动交友），用后缀覆盖各自的子域
+DOMAIN-SUFFIX,look.163.com,IP归属地
+DOMAIN-SUFFIX,crush.163.com,IP归属地
+# 网易易盾的设备指纹上报，带风控信息。收益不确定，如果引起异常可删。
+DOMAIN,fp-upload.dun.163.com,IP归属地
+
+# --- 小红书 --- 已核对，不需要补
+# 1121 条抓包里，edith.xiaohongshu.com（84 条）等所有 xiaohongshu.com 业务域名
+# 都已被上游 DOMAIN-SUFFIX,xiaohongshu.com 覆盖并走 IP归属地；
+# xhscdn.com 下的 13 个图片/视频 CDN 子域未被覆盖、走直连，这是正确的。
