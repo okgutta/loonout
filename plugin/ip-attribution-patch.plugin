@@ -36,5 +36,21 @@
 DOMAIN-KEYWORD,-normal-,IP归属地
 DOMAIN-SUFFIX,amemv.com,IP归属地
 
-# --- 小红书 / 网易云音乐 / 懂球帝 ---
-# 尚未验证。等抓到日志、确认漏了哪个域名后再往这里加。
+# --- 懂球帝 --- 发现于 2026-09-21
+# 上游写的是 DOMAIN-SUFFIX,dongqiudi.com —— 少了 "an"，拼写就不对。
+# 懂球帝 App 实际用的是 dongdianqiu.com。抓包证据：
+#   zc.dongdianqiu.com 的请求参数里带 app=dqd
+#   响应体里有 <meta name=keywords content="懂球帝,App,手机客户端">
+#   用户数据里出现 "name":"西瓜懂球" 和 img1.dongdianqiu.com 的头像
+# 结果上游那条一条都没匹配上，231 条请求全部落到 GEOIP,CN,DIRECT 直连。
+#
+# 图片和静态资源显式直连，必须放在下面那条 SUFFIX 之前 —— 否则图片也走代理，
+# 打开列表会明显变慢。其余子域（api / zc / sd / dab / detail / ap / go-biz /
+# device / article / im-ap / sensors-log / stat / n / sport-data）全部代理。
+DOMAIN-SUFFIX,img1.dongdianqiu.com,DIRECT
+DOMAIN-SUFFIX,static1.dongdianqiu.com,DIRECT
+DOMAIN-KEYWORD,bdimg,DIRECT
+DOMAIN-SUFFIX,dongdianqiu.com,IP归属地
+
+# --- 小红书 / 网易云音乐 ---
+# 这两次抓包里没有它们的流量。等哪天抓到了再加。
