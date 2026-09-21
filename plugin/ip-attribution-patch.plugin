@@ -1,0 +1,40 @@
+#!name=IP 归属地伪装 · App 补丁
+#!desc=anti-ip-attribution 未覆盖的 App 接口域名，命中后走「IP归属地」策略组
+#!author=okgutta
+#!homepage=https://github.com/okgutta/loonout
+#!icon=https://raw.githubusercontent.com/fmz200/wool_scripts/main/icons/apps/Proxy.png
+#!category=IP归属地
+
+# ============================================================
+# 这个插件只干一件事：补上 anti-ip-attribution 没覆盖到的 App 接口域名。
+#
+# 背景
+#   Loon.conf 里已经内联了上游全部 233 条规则（在本地 [Rule]，按上游原序）。
+#   但上游对部分 App 的覆盖有缺口，实测日志证明这些 App 的业务请求会落到
+#   GEOIP,CN,DIRECT —— 也就是直连，App 看到的仍是真实出口 IP。
+#
+# 为什么做成插件
+#   插件规则优先级高于订阅规则，且 Loon 会自动更新插件。
+#   以后发现新的漏网域名，改这个文件就行，Loon 会自动拉到，不用再动配置。
+#
+# 维护约定
+#   1. 只加「业务接口」域名，别加 CDN / 静态资源域名，否则视频图片会走代理变慢；
+#   2. 每条都写清楚发现时间和依据，方便以后判断是否还有效；
+#   3. 策略统一写 IP归属地 —— 这个名字必须和配置 [Proxy Group] 里的组名一致，
+#      改过组名的话这里也要跟着改。
+# ============================================================
+
+[Rule]
+# --- 抖音 --- 发现于 2026-09-21
+# 日志实测：api-play-zjg.amemv.com、life5-normal-m-zb.amemv.com、webcast5-core-hl.amemv.com
+# 等全部落到 GEOIP,CN,DIRECT。上游对抖音只收了 -lq / -hl / -lf 关键词和 snssdk.com，
+# 而实际主机名是 life5-normal-m-hl（中间多了 -m-）、webcast5-core-hl（少了 -c），
+# 上游那几条一条都匹配不上。
+# 上游 rules.yaml 自己写过「针对 amemv.com 域名下的 -normal- 关键词代理就能实现IP归属地修改」。
+# 视频/图片 CDN 不在 amemv.com 下（douyinvod.com / douyinpic.com / bytednsdoc.com /
+# bytegecko.com），所以整段代理 amemv.com 不影响视频速度。
+DOMAIN-KEYWORD,-normal-,IP归属地
+DOMAIN-SUFFIX,amemv.com,IP归属地
+
+# --- 小红书 / 网易云音乐 / 懂球帝 ---
+# 尚未验证。等抓到日志、确认漏了哪个域名后再往这里加。
