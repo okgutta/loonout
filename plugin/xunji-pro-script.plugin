@@ -1,0 +1,12 @@
+#!name=训记 PRO 解锁（脚本版）
+#!desc=用 JS 解析 JSON 后改会员字段，比正则改写更稳（需要能访问 script-path）
+#!author=YG
+
+[mitm]
+hostname = api.xunjiapp.cn, trains.xunjiapp.cn, eatings.xunjiapp.cn
+
+[Script]
+xunji_pro = type=http-response,pattern=^https:\/\/api\.xunjiapp\.cn\/(fetch_policy|try_vip_get|have_universal_plan_v2),requires-body=1,max-size=1048576,script-path=https://raw.githubusercontent.com/okgutta/loonout/main/scripts/xunji_pro.js
+
+# —— 采集版：第一次排查用，命中后注释掉上面这条、放开下面这条 ——
+# xunji_recon = type=http-response,pattern=^https:\/\/api\.xunjiapp\.cn\/,requires-body=1,max-size=1048576,script-path=https://raw.githubusercontent.com/okgutta/loonout/main/scripts/xunji_recon.js
