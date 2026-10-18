@@ -1,0 +1,22 @@
+#!name=训记 PRO 解锁（纯改写版）
+#!desc=把 api.xunjiapp.cn 的会员状态响应改写为已开通：fetch_policy.isgrand / try_vip_get.vipDay
+#!author=YG
+#!homepage=https://api.xunjiapp.cn
+#!icon=https://thirdwx.qlogo.cn/mmopen/vi_32/0LXbMicxGicVib489j38OGs99nZe7Ygmu04392XxGl2fajfzysHsiaibLUWLWnGeWgUrrnASz0vcSfLicJQKibzSVib1tyzMsHqnn85h9yca0FIMmMM/132
+
+# 不写 [General]，避免插件覆盖你现有配置的全局代理设置
+
+[mitm]
+hostname = api.xunjiapp.cn, trains.xunjiapp.cn, eatings.xunjiapp.cn
+
+[Rewrite]
+# 1) 会员总开关：{"success":true,"res":{"isgrand":false,"policyVersion":"..."}}
+^https:\/\/api\.xunjiapp\.cn\/fetch_policy url response-body "isgrand":false "isgrand":true
+
+# 2) 试用会员倒计时：{"vipDay":-1,"hasTry":false,"showVipTry":false}
+^https:\/\/api\.xunjiapp\.cn\/try_vip_get url response-body "vipDay":-1 "vipDay":36500
+^https:\/\/api\.xunjiapp\.cn\/try_vip_get url response-body "hasTry":false "hasTry":true
+# showVipTry 原值就是 false（已开通不弹试用），不用动，强行改 true 反而会弹试用入口
+
+# 3) 通用计划状态（如有需要再放开）
+# ^https:\/\/api\.xunjiapp\.cn\/have_universal_plan_v2 url response-body "pt":{} "pt":{"enable":true}
