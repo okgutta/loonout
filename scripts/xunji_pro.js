@@ -1,44 +1,53 @@
 /**
- * 训记 (trainnote) PRO 解锁 —— Loon / Surge / QX 通用 http-response 脚本
- * 目标：api.xunjiapp.cn
- *   1. /fetch_policy            res.isgrand  false -> true
- *   2. /try_vip_get             vipDay -1 -> 36500 / hasTry true
- *   3. /have_universal_plan_v2  res.pt / res.tn 兜底补空对象
+ * 训记 (trainnote) PRO 解锁 v2 —— Loon http-response 脚本
  *
- * 用法（Loon 脚本版插件）：
+ * 目标主机：api.xunjiapp.cn
+ *   /fetch_policy                                 res.isgrand   false -> true   （会员总开关）
+ *   /try_vip_get                                  res.vipDay    -1    -> 36500  （剩余天数）
+ *   /have_universal_plan_v2                       res.pt/tn     兜底补空对象
+ *
+ * Loon 插件里用法：
  *   [Script]
- *   xunji_pro = type=http-response,pattern=^https:\/\/api\.xunjiapp\.cn\/(fetch_policy|try_vip_get|have_universal_plan_v2),requires-body=1,max-size=1048576,script-path=<本文件地址>
+ *   http-response ^https?:\/\/api\.xunjiapp\.cn\/(fetch_policy|try_vip_get|have_universal_plan_v2) script-path=<本文件>,requires-body=1,max-size=1048576
  */
 
 const url = $request.url;
-let body = $response.body;
+const raw = $response.body || "";
+console.log("[XJ-PRO] hit " + ($request.method || "?") + " " + url + " len=" + raw.length);
 
-function safeParse(t) {
-  try { return JSON.parse(t); } catch (e) { return null; }
+function done(body) {
+  console.log("[XJ-PRO] out " + (body || "").slice(0, 240));
+  $done({ body: body });
 }
 
-let obj = safeParse(body);
+let obj = null;
+try { obj = JSON.parse(raw); } catch (e) { obj = null; }
 
-if (obj && typeof obj === "object") {
+if (!obj || typeof obj !== "object") {
+  console.log("[XJ-PRO] 非 JSON，原样放行");
+  $done({});
+} else {
   if (/\/fetch_policy(\?|$)/.test(url)) {
-    if (!obj.res) obj.res = {};
-    obj.res.isgrand = true;          // 会员总开关
+    obj.res = obj.res || {};
+    obj.res.isgrand = true;
     if (!obj.res.policyVersion) obj.res.policyVersion = "2099-01-01";
-    console.log("[xunji] fetch_policy -> isgrand=true");
+    done(JSON.stringify(obj));
   } else if (/\/try_vip_get(\?|$)/.test(url)) {
     obj.res = obj.res || {};
-    obj.res.vipDay = 36500;          // 剩余天数拉满
+    obj.res.vipDay = 36500;
     obj.res.hasTry = true;
-    obj.res.showVipTry = false;      // 已开通就别再弹试用
-    console.log("[xunji] try_vip_get -> vipDay=36500");
+    obj.res.showVipTry = false;
+    done(JSON.stringify(obj));
   } else if (/\/have_universal_plan_v2(\?|$)/.test(url)) {
-    obj.res = obj.res || {};
-    if (!obj.res.pt) obj.res.pt = {};
-    if (!obj.res.tn) obj.res.tn = {};
-    console.log("[xunji] have_universal_plan_v2 -> 兜底");
+    // 服务端两种形态：{"res":0} 或 {"res":{"pt":{},"tn":{}}}
+    if (typeof obj.res === "number") {
+      obj.res = { pt: {}, tn: {} };
+    } else if (obj.res && typeof obj.res === "object") {
+      if (!obj.res.pt) obj.res.pt = {};
+      if (!obj.res.tn) obj.res.tn = {};
+    }
+    done(JSON.stringify(obj));
+  } else {
+    $done({});
   }
-  $done({ body: JSON.stringify(obj) });
-} else {
-  // 非 JSON（理论不会到这），原样放行
-  $done({});
 }
