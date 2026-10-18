@@ -1,9 +1,0 @@
-#!name=训记 调试（只记日志）
-#!desc=确认 Loon 是否对 api.xunjiapp.cn 执行脚本；不改任何响应
-#!author=YG
-
-[Script]
-http-response ^https?:\/\/api\.xunjiapp\.cn\/ script-path=https://cdn.jsdelivr.net/gh/okgutta/loonout@main/scripts/xunji_debug.js,requires-body=1,max-size=1048576,tag=训记调试
-
-[MITM]
-hostname = api.xunjiapp.cn, trains.xunjiapp.cn, eatings.xunjiapp.cn
