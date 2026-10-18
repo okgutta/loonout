@@ -1,22 +1,19 @@
-#!name=训记 PRO 解锁（纯改写版）
-#!desc=把 api.xunjiapp.cn 的会员状态响应改写为已开通：fetch_policy.isgrand / try_vip_get.vipDay
+#!name=训记 PRO 解锁
+#!desc=独立插件：改写 api.xunjiapp.cn 的会员状态（fetch_policy.isgrand / try_vip_get.vipDay），不依赖任何配置改动
 #!author=YG
-#!homepage=https://api.xunjiapp.cn
-#!icon=https://thirdwx.qlogo.cn/mmopen/vi_32/0LXbMicxGicVib489j38OGs99nZe7Ygmu04392XxGl2fajfzysHsiaibLUWLWnGeWgUrrnASz0vcSfLicJQKibzSVib1tyzMsHqnn85h9yca0FIMmMM/132
+#!homepage=https://github.com/okgutta/loonout
 
-# 不写 [General]，避免插件覆盖你现有配置的全局代理设置
+# ─────────────────────────────────────────────
+# 安装：loon://import?plugin=https://cdn.jsdelivr.net/gh/okgutta/loonout@main/plugin/xunji-pro.plugin
+# 只做两件事：MITM api.xunjiapp.cn + 改写会员状态字段。不碰主配置、不碰其他 App。
+# ─────────────────────────────────────────────
 
-[mitm]
-hostname = api.xunjiapp.cn, trains.xunjiapp.cn, eatings.xunjiapp.cn
+[Script]
+http-response ^https?:\/\/api\.xunjiapp\.cn\/(fetch_policy|try_vip_get|have_universal_plan_v2) script-path=https://cdn.jsdelivr.net/gh/okgutta/loonout@main/scripts/xunji_pro.js,requires-body=1,max-size=1048576,tag=训记会员状态
 
 [Rewrite]
-# 1) 会员总开关：{"success":true,"res":{"isgrand":false,"policyVersion":"..."}}
-^https:\/\/api\.xunjiapp\.cn\/fetch_policy url response-body "isgrand":false "isgrand":true
+^https?:\/\/api\.xunjiapp\.cn\/fetch_policy url response-body "isgrand":false "isgrand":true
+^https?:\/\/api\.xunjiapp\.cn\/try_vip_get url response-body "vipDay":-1 "vipDay":36500
 
-# 2) 试用会员倒计时：{"vipDay":-1,"hasTry":false,"showVipTry":false}
-^https:\/\/api\.xunjiapp\.cn\/try_vip_get url response-body "vipDay":-1 "vipDay":36500
-^https:\/\/api\.xunjiapp\.cn\/try_vip_get url response-body "hasTry":false "hasTry":true
-# showVipTry 原值就是 false（已开通不弹试用），不用动，强行改 true 反而会弹试用入口
-
-# 3) 通用计划状态（如有需要再放开）
-# ^https:\/\/api\.xunjiapp\.cn\/have_universal_plan_v2 url response-body "pt":{} "pt":{"enable":true}
+[MITM]
+hostname = api.xunjiapp.cn
