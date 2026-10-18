@@ -5,15 +5,14 @@
 
 # ─────────────────────────────────────────────
 # 安装：loon://import?plugin=https://cdn.jsdelivr.net/gh/okgutta/loonout@main/plugin/xunji-pro.plugin
-# 只做两件事：MITM api.xunjiapp.cn + 改写会员状态字段。不碰主配置、不碰其他 App。
+# 自包含：声明 MITM 主机 + 挂一个 http-response 脚本。不改主配置、不影响其他 App。
+# 日志验证：Loon → 日志 → 过滤 XJ-PRO
+#   [XJ-PRO] hit POST https://api.xunjiapp.cn/fetch_policy len=69
+#   [XJ-PRO] out {"success":true,"res":{"isgrand":true,...}}
 # ─────────────────────────────────────────────
 
 [Script]
 http-response ^https?:\/\/api\.xunjiapp\.cn\/(fetch_policy|try_vip_get|have_universal_plan_v2) script-path=https://cdn.jsdelivr.net/gh/okgutta/loonout@main/scripts/xunji_pro.js,requires-body=1,max-size=1048576,tag=训记会员状态
-
-[Rewrite]
-^https?:\/\/api\.xunjiapp\.cn\/fetch_policy url response-body "isgrand":false "isgrand":true
-^https?:\/\/api\.xunjiapp\.cn\/try_vip_get url response-body "vipDay":-1 "vipDay":36500
 
 [MITM]
 hostname = api.xunjiapp.cn
